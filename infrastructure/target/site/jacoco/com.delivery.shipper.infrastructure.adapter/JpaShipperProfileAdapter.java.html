@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JpaShipperProfileAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.infrastructure.adapter</a> &gt; <span class="el_source">JpaShipperProfileAdapter.java</span></div><h1>JpaShipperProfileAdapter.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.infrastructure.adapter;
+
+import com.delivery.shipper.application.api.ShipperCommands;
+import com.delivery.shipper.application.api.ShipperPorts;
+import com.delivery.shipper.application.api.ShipperResults;
+import com.delivery.shipper.application.api.ShipperSnapshot;
+import com.delivery.shipper.domain.identity.IdentityRef;
+import com.delivery.shipper.domain.read.PageRequest;
+import com.delivery.shipper.domain.read.PageSlice;
+import com.delivery.shipper.infrastructure.entity.Shipper;
+import com.delivery.shipper.infrastructure.repository.ShipperRepository;
+import java.math.BigDecimal;
+import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Persistence adapter; JPA types never cross the application port. */
+@Component
+public class JpaShipperProfileAdapter implements ShipperPorts.ProfileStore, ShipperPorts.IdentityStatusStore {
+    private final ShipperRepository repository;
+    private final ShipperIdentityOutboxService identityOutbox;
+
+<span class="nc" id="L24">    public JpaShipperProfileAdapter(ShipperRepository repository, ShipperIdentityOutboxService identityOutbox) {</span>
+<span class="nc" id="L25">        this.repository = repository;</span>
+<span class="nc" id="L26">        this.identityOutbox = identityOutbox;</span>
+<span class="nc" id="L27">    }</span>
+
+    @Override @Transactional
+    public ShipperSnapshot insert(ShipperCommands.CreateProfile c) {
+<span class="nc" id="L31">        Shipper e = new Shipper();</span>
+<span class="nc" id="L32">        e.setPrincipalId(c.actor().principalId()); e.setUserId(c.actor().legacyUserId());</span>
+<span class="nc" id="L33">        e.setFullName(c.fullName()); e.setVehicleType(c.vehicleType()); e.setLicenseNumber(c.licenseNumber());</span>
+<span class="nc" id="L34">        e.setIdCard(c.idCard()); e.setPhone(c.phone()); e.setLicensePlate(c.licensePlate());</span>
+<span class="nc" id="L35">        e.setDriverImage(c.driverImage()); e.setIdCardFrontImage(c.idCardFrontImage());</span>
+<span class="nc" id="L36">        e.setIdCardBackImage(c.idCardBackImage()); e.setLicenseImage(c.licenseImage());</span>
+<span class="nc" id="L37">        Shipper saved = repository.save(e);</span>
+<span class="nc" id="L38">        identityOutbox.upsert(saved);</span>
+<span class="nc" id="L39">        return snapshot(saved);</span>
+    }
+<span class="nc" id="L41">    @Override public Optional&lt;ShipperSnapshot&gt; findByPrincipalId(long id) { return repository.findByPrincipalId(id).map(this::snapshot); }</span>
+<span class="nc" id="L42">    @Override public Optional&lt;ShipperSnapshot&gt; findById(long id) { return repository.findById(id).map(this::snapshot); }</span>
+    @Override @Transactional public ShipperSnapshot update(ShipperCommands.UpdateProfile c) {
+<span class="nc" id="L44">        Shipper e = repository.findById(c.shipperId()).orElseThrow();</span>
+<span class="nc bnc" id="L45" title="All 4 branches missed.">        if (c.fullName() != null) e.setFullName(c.fullName()); if (c.vehicleType() != null) e.setVehicleType(c.vehicleType());</span>
+<span class="nc bnc" id="L46" title="All 4 branches missed.">        if (c.licenseNumber() != null) e.setLicenseNumber(c.licenseNumber()); if (c.idCard() != null) e.setIdCard(c.idCard());</span>
+<span class="nc bnc" id="L47" title="All 4 branches missed.">        if (c.phone() != null) e.setPhone(c.phone()); if (c.licensePlate() != null) e.setLicensePlate(c.licensePlate());</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (c.driverImage() != null) e.setDriverImage(c.driverImage());</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (c.idCardFrontImage() != null) e.setIdCardFrontImage(c.idCardFrontImage());</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (c.idCardBackImage() != null) e.setIdCardBackImage(c.idCardBackImage());</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (c.licenseImage() != null) e.setLicenseImage(c.licenseImage());</span>
+<span class="nc" id="L52">        return snapshot(repository.save(e));</span>
+    }
+    @Override @Transactional public ShipperSnapshot updateOnline(long id, boolean online) {
+<span class="nc" id="L55">        Shipper e = repository.findById(id).orElseThrow(); e.setIsOnline(online); return snapshot(repository.save(e));</span>
+    }
+    @Override public ShipperResults.SelfPage page(PageRequest request) {
+        org.springframework.data.domain.Page&lt;Shipper&gt; page;
+<span class="nc" id="L59">        var pageable = org.springframework.data.domain.PageRequest.of(request.page(), request.size());</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (request.isOnline() != null) {</span>
+<span class="nc" id="L61">            page = repository.findByIsOnline(request.isOnline(), pageable);</span>
+        } else {
+<span class="nc" id="L63">            page = repository.findByPrincipalIdIsNotNull(pageable);</span>
+        }
+<span class="nc" id="L65">        return new ShipperResults.SelfPage(new PageSlice&lt;&gt;(page.getContent().stream().map(this::snapshot).toList(), request, page.getTotalElements()));</span>
+    }
+    @Override public boolean existsByLicenseNumber(String value, Long excluded) {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        return excluded == null ? repository.existsByLicenseNumber(value) : repository.existsByLicenseNumberAndIdNot(value, excluded);</span>
+    }
+    @Override public boolean existsByIdCard(String value, Long excluded) {
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        return excluded == null ? repository.existsByIdCard(value) : repository.existsByIdCardAndIdNot(value, excluded);</span>
+    }
+    @Override @Transactional public ShipperResults.IdentityStatusResult apply(ShipperCommands.IdentityStatusProjection c) {
+<span class="nc" id="L74">        Shipper e = repository.findByPrincipalId(c.principalId()).orElse(null);</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (e == null) return new ShipperResults.IdentityStatusResult(c.principalId(), c.status(), c.version(), false);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        long current = e.getIdentityStatusVersion() == null ? 0 : e.getIdentityStatusVersion();</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (c.version() &gt; current) { e.setIdentityStatus(c.status()); e.setIdentityStatusVersion(c.version()); repository.save(e); return new ShipperResults.IdentityStatusResult(c.principalId(), c.status(), c.version(), true); }</span>
+<span class="nc" id="L78">        return new ShipperResults.IdentityStatusResult(c.principalId(), c.status(), c.version(), false);</span>
+    }
+    private ShipperSnapshot snapshot(Shipper e) {
+<span class="nc" id="L81">        return new ShipperSnapshot(e.getId(), new IdentityRef(e.getPrincipalId(), e.getUserId()), e.getFullName(), e.getVehicleType(),</span>
+<span class="nc" id="L82">                e.getLicenseNumber(), e.getIdCard(), e.getPhone(), e.getLicensePlate(), Boolean.TRUE.equals(e.getIsOnline()),</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                e.getCompletedDeliveries() == null ? 0 : e.getCompletedDeliveries(), e.getRating() == null ? 0 : e.getRating().doubleValue(), 0,</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                e.getIdentityStatus(), e.getIdentityStatusVersion() == null ? 0 : e.getIdentityStatusVersion(),</span>
+<span class="nc" id="L85">                e.getDriverImage(), e.getIdCardFrontImage(), e.getIdCardBackImage(), e.getLicenseImage(),</span>
+<span class="nc" id="L86">                e.getCreatedAt(), e.getUpdatedAt());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

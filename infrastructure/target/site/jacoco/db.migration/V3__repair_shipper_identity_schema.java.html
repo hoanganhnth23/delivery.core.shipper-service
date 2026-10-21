@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>V3__repair_shipper_identity_schema.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">db.migration</a> &gt; <span class="el_source">V3__repair_shipper_identity_schema.java</span></div><h1>V3__repair_shipper_identity_schema.java</h1><pre class="source lang-java linenums">package db.migration;
+
+import org.flywaydb.core.api.FlywayException;
+import org.flywaydb.core.api.migration.BaseJavaMigration;
+import org.flywaydb.core.api.migration.Context;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/** Repairs runtime schemas that were baselined before the current Shipper V1 contract. */
+<span class="fc" id="L19">public class V3__repair_shipper_identity_schema extends BaseJavaMigration {</span>
+
+    @Override
+    public void migrate(Context context) throws Exception {
+<span class="fc" id="L23">        Connection connection = context.getConnection();</span>
+<span class="fc" id="L24">        String shippers = requireTable(connection, &quot;shipper&quot;);</span>
+<span class="fc" id="L25">        String locations = requireTable(connection, &quot;shipper_locations&quot;);</span>
+<span class="fc" id="L26">        String ratings = requireTable(connection, &quot;shipper_ratings&quot;);</span>
+
+<span class="fc" id="L28">        addNullableColumnIfMissing(connection, shippers, &quot;full_name&quot;, &quot;full_name VARCHAR(100)&quot;);</span>
+
+<span class="fc" id="L30">        requireNoDuplicate(connection, &quot;shipper&quot;, &quot;user_id&quot;, false, &quot;user_id&quot;);</span>
+<span class="fc" id="L31">        requireNoDuplicate(connection, &quot;shipper&quot;, &quot;license_number&quot;, true, &quot;license_number&quot;);</span>
+<span class="fc" id="L32">        requireNoDuplicate(connection, &quot;shipper&quot;, &quot;id_card&quot;, true, &quot;id_card&quot;);</span>
+<span class="fc" id="L33">        requireNoDuplicate(connection, &quot;shipper_locations&quot;, &quot;shipper_id&quot;, false, &quot;location shipper_id&quot;);</span>
+<span class="fc" id="L34">        requireNoDuplicate(connection, &quot;shipper_ratings&quot;, &quot;order_id&quot;, false, &quot;rating order_id&quot;);</span>
+
+<span class="fc" id="L36">        addUniqueIfMissing(connection, shippers, &quot;user_id&quot;, &quot;uk_shipper_user_id&quot;);</span>
+<span class="fc" id="L37">        addUniqueIfMissing(connection, shippers, &quot;license_number&quot;, &quot;uk_shipper_license_number&quot;);</span>
+<span class="fc" id="L38">        addUniqueIfMissing(connection, shippers, &quot;id_card&quot;, &quot;uk_shipper_id_card&quot;);</span>
+<span class="fc" id="L39">        addUniqueIfMissing(connection, locations, &quot;shipper_id&quot;, &quot;uk_shipper_locations_shipper_id&quot;);</span>
+<span class="fc" id="L40">        addUniqueIfMissing(connection, ratings, &quot;order_id&quot;, &quot;uk_shipper_ratings_order_id&quot;);</span>
+
+<span class="fc" id="L42">        execute(connection, &quot;CREATE INDEX IF NOT EXISTS idx_shipper_online ON shipper (is_online)&quot;);</span>
+<span class="fc" id="L43">        execute(connection, &quot;&quot;&quot;</span>
+                CREATE INDEX IF NOT EXISTS idx_shipper_ratings_shipper_created
+                ON shipper_ratings (shipper_id, created_at)
+                &quot;&quot;&quot;);
+<span class="fc" id="L47">    }</span>
+
+    private void addNullableColumnIfMissing(Connection connection, String tableName, String columnName,
+                                            String definition) throws SQLException {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (!hasColumn(connection, tableName, columnName)) {</span>
+<span class="fc" id="L52">            execute(connection, &quot;ALTER TABLE &quot; + tableName + &quot; ADD COLUMN &quot; + definition);</span>
+        }
+<span class="fc" id="L54">    }</span>
+
+    private boolean hasColumn(Connection connection, String tableName, String columnName) throws SQLException {
+<span class="fc" id="L57">        try (ResultSet resultSet = connection.getMetaData()</span>
+<span class="fc" id="L58">                .getColumns(null, connection.getSchema(), tableName, &quot;%&quot;)) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            while (resultSet.next()) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                if (columnName.equalsIgnoreCase(resultSet.getString(&quot;COLUMN_NAME&quot;))) return true;</span>
+            }
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        }</span>
+<span class="fc" id="L63">        return false;</span>
+    }
+
+    private void requireNoDuplicate(Connection connection, String table, String column,
+                                    boolean ignoreNull, String label) throws SQLException {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        String where = ignoreNull ? &quot; WHERE &quot; + column + &quot; IS NOT NULL&quot; : &quot;&quot;;</span>
+<span class="fc" id="L69">        long groups = queryCount(connection, &quot;SELECT count(*) FROM (SELECT &quot; + column + &quot; FROM &quot;</span>
+                + table + where + &quot; GROUP BY &quot; + column + &quot; HAVING count(*) &gt; 1) duplicates&quot;);
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (groups &gt; 0) {</span>
+<span class="nc" id="L72">            throw new FlywayException(&quot;Shipper schema contains &quot; + groups + &quot; duplicate &quot; + label</span>
+                    + &quot; group(s); manual reconciliation is required&quot;);
+        }
+<span class="fc" id="L75">    }</span>
+
+    private void addUniqueIfMissing(Connection connection, String tableName, String column,
+                                    String constraint) throws SQLException {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (!hasUniqueSingleColumnIndex(connection, tableName, column)) {</span>
+<span class="fc" id="L80">            execute(connection, &quot;ALTER TABLE &quot; + tableName + &quot; ADD CONSTRAINT &quot; + constraint</span>
+                    + &quot; UNIQUE (&quot; + column + &quot;)&quot;);
+        }
+<span class="fc" id="L83">    }</span>
+
+    private long queryCount(Connection connection, String sql) throws SQLException {
+<span class="fc" id="L86">        try (Statement statement = connection.createStatement(); ResultSet resultSet = statement.executeQuery(sql)) {</span>
+<span class="fc" id="L87">            resultSet.next();</span>
+<span class="fc" id="L88">            return resultSet.getLong(1);</span>
+        }
+    }
+
+    private String requireTable(Connection connection, String expectedName) throws SQLException {
+<span class="fc" id="L93">        DatabaseMetaData metadata = connection.getMetaData();</span>
+<span class="fc" id="L94">        try (ResultSet tables = metadata.getTables(</span>
+<span class="fc" id="L95">                null, connection.getSchema(), &quot;%&quot;, new String[]{&quot;TABLE&quot;})) {</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            while (tables.next()) {</span>
+<span class="fc" id="L97">                String name = tables.getString(&quot;TABLE_NAME&quot;);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                if (expectedName.equalsIgnoreCase(name)) return name;</span>
+<span class="fc" id="L99">            }</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        }</span>
+<span class="nc" id="L101">        throw new FlywayException(&quot;Existing Shipper schema is incomplete: missing table &quot; + expectedName);</span>
+    }
+
+    private boolean hasUniqueSingleColumnIndex(Connection connection, String tableName, String columnName)
+            throws SQLException {
+<span class="fc" id="L106">        Map&lt;String, Set&lt;String&gt;&gt; columnsByIndex = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L107">        try (ResultSet indexes = connection.getMetaData().getIndexInfo(</span>
+<span class="fc" id="L108">                null, connection.getSchema(), tableName, true, false)) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            while (indexes.next()) {</span>
+<span class="fc" id="L110">                String index = indexes.getString(&quot;INDEX_NAME&quot;);</span>
+<span class="fc" id="L111">                String column = indexes.getString(&quot;COLUMN_NAME&quot;);</span>
+<span class="pc bpc" id="L112" title="2 of 4 branches missed.">                if (index != null &amp;&amp; column != null) {</span>
+<span class="fc" id="L113">                    columnsByIndex.computeIfAbsent(index.toLowerCase(Locale.ROOT), ignored -&gt; new HashSet&lt;&gt;())</span>
+<span class="fc" id="L114">                            .add(column.toLowerCase(Locale.ROOT));</span>
+                }
+<span class="fc" id="L116">            }</span>
+        }
+<span class="fc" id="L118">        return columnsByIndex.values().stream().anyMatch(columns -&gt; columns.equals(Set.of(columnName)));</span>
+    }
+
+    private void execute(Connection connection, String sql) throws SQLException {
+<span class="fc" id="L122">        try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L123">            statement.execute(sql);</span>
+        }
+<span class="fc" id="L125">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

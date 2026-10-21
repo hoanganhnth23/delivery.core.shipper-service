@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdentityStatusProjection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-domain</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.domain.identity</a> &gt; <span class="el_source">IdentityStatusProjection.java</span></div><h1>IdentityStatusProjection.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.domain.identity;
+
+import java.util.Objects;
+
+public record IdentityStatusProjection(long principalId, String status, long version) {
+<span class="fc" id="L6">    public IdentityStatusProjection {</span>
+<span class="fc bfc" id="L7" title="All 4 branches covered.">        if (principalId &lt;= 0 || version &lt; 0) throw new IllegalArgumentException(&quot;invalid identity projection&quot;);</span>
+<span class="pc bpc" id="L8" title="1 of 4 branches missed.">        if (status == null || status.isBlank()) throw new IllegalArgumentException(&quot;status is required&quot;);</span>
+<span class="fc" id="L9">    }</span>
+
+    /** Newer versions win; equal versions are idempotent only for the same state. */
+    public IdentityStatusProjection apply(String nextStatus, long nextVersion) {
+<span class="fc" id="L13">        Objects.requireNonNull(nextStatus, &quot;nextStatus&quot;);</span>
+<span class="fc bfc" id="L14" title="All 2 branches covered.">        if (nextVersion &lt; version) return this;</span>
+<span class="fc bfc" id="L15" title="All 4 branches covered.">        if (nextVersion == version &amp;&amp; !status.equals(nextStatus)) throw new IllegalArgumentException(&quot;identity version conflict&quot;);</span>
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        return nextVersion == version ? this : new IdentityStatusProjection(principalId, nextStatus, nextVersion);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

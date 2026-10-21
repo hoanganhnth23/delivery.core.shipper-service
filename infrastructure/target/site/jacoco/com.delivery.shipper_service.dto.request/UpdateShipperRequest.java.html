@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdateShipperRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper_service.dto.request</a> &gt; <span class="el_source">UpdateShipperRequest.java</span></div><h1>UpdateShipperRequest.java</h1><pre class="source lang-java linenums">package com.delivery.shipper_service.dto.request;
+
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Null;
+
+public class UpdateShipperRequest {
+    @Size(max = 100)
+    private String fullName;
+    @Size(max = 50)
+    private String vehicleType;
+    @Size(max = 50)
+    private String licenseNumber;
+    @Size(max = 20)
+    private String idCard;
+    private String driverImage;
+    /**
+     * Availability is not profile data. Retain the JSON field solely to return
+     * a validation error to legacy callers instead of silently accepting it;
+     * callers must use PATCH /api/shippers/online-status.
+     */
+    @Null(message = &quot;isOnline must be changed through /api/shippers/online-status&quot;)
+    private Boolean isOnline;
+    @Size(max = 15)
+    private String phone;
+    private String idCardFrontImage;
+    private String idCardBackImage;
+    private String licenseImage;
+    private String licensePlate;
+
+    // Constructors
+<span class="fc" id="L31">    public UpdateShipperRequest() {</span>
+<span class="fc" id="L32">    }</span>
+
+    public UpdateShipperRequest(String vehicleType, String licenseNumber, String idCard, String driverImage,
+<span class="nc" id="L35">            Boolean isOnline,  String phone) {</span>
+<span class="nc" id="L36">        this.vehicleType = vehicleType;</span>
+<span class="nc" id="L37">        this.licenseNumber = licenseNumber;</span>
+<span class="nc" id="L38">        this.idCard = idCard;</span>
+<span class="nc" id="L39">        this.driverImage = driverImage;</span>
+<span class="nc" id="L40">        this.isOnline = isOnline;</span>
+<span class="nc" id="L41">        this.phone = phone;</span>
+<span class="nc" id="L42">    }</span>
+
+    // Getters and Setters
+<span class="nc" id="L45">    public String getFullName() { return fullName; }</span>
+<span class="nc" id="L46">    public void setFullName(String fullName) { this.fullName = fullName; }</span>
+
+    public String getVehicleType() {
+<span class="nc" id="L49">        return vehicleType;</span>
+    }
+
+    public void setVehicleType(String vehicleType) {
+<span class="nc" id="L53">        this.vehicleType = vehicleType;</span>
+<span class="nc" id="L54">    }</span>
+
+    public String getLicenseNumber() {
+<span class="nc" id="L57">        return licenseNumber;</span>
+    }
+
+    public void setLicenseNumber(String licenseNumber) {
+<span class="nc" id="L61">        this.licenseNumber = licenseNumber;</span>
+<span class="nc" id="L62">    }</span>
+
+    public String getIdCard() {
+<span class="nc" id="L65">        return idCard;</span>
+    }
+
+    public void setIdCard(String idCard) {
+<span class="nc" id="L69">        this.idCard = idCard;</span>
+<span class="nc" id="L70">    }</span>
+
+    public String getDriverImage() {
+<span class="nc" id="L73">        return driverImage;</span>
+    }
+
+    public void setDriverImage(String driverImage) {
+<span class="nc" id="L77">        this.driverImage = driverImage;</span>
+<span class="nc" id="L78">    }</span>
+
+    public Boolean getIsOnline() {
+<span class="nc" id="L81">        return isOnline;</span>
+    }
+
+    public void setIsOnline(Boolean isOnline) {
+<span class="fc" id="L85">        this.isOnline = isOnline;</span>
+<span class="fc" id="L86">    }</span>
+
+  
+    public String getPhone() {
+<span class="nc" id="L90">        return phone;</span>
+    }
+
+    public void setPhone(String phone) {
+<span class="nc" id="L94">        this.phone = phone;</span>
+<span class="nc" id="L95">    }</span>
+
+    public String getIdCardFrontImage() {
+<span class="nc" id="L98">        return idCardFrontImage;</span>
+    }
+
+    public void setIdCardFrontImage(String idCardFrontImage) {
+<span class="nc" id="L102">        this.idCardFrontImage = idCardFrontImage;</span>
+<span class="nc" id="L103">    }</span>
+
+    public String getIdCardBackImage() {
+<span class="nc" id="L106">        return idCardBackImage;</span>
+    }
+
+    public void setIdCardBackImage(String idCardBackImage) {
+<span class="nc" id="L110">        this.idCardBackImage = idCardBackImage;</span>
+<span class="nc" id="L111">    }</span>
+
+    public String getLicenseImage() {
+<span class="nc" id="L114">        return licenseImage;</span>
+    }
+
+    public void setLicenseImage(String licenseImage) {
+<span class="nc" id="L118">        this.licenseImage = licenseImage;</span>
+<span class="nc" id="L119">    }</span>
+
+    public String getLicensePlate() {
+<span class="nc" id="L122">        return licensePlate;</span>
+    }
+
+    public void setLicensePlate(String licensePlate) {
+<span class="nc" id="L126">        this.licensePlate = licensePlate;</span>
+<span class="nc" id="L127">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

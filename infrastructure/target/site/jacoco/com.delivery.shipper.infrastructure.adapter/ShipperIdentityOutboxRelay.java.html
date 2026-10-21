@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperIdentityOutboxRelay.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.infrastructure.adapter</a> &gt; <span class="el_source">ShipperIdentityOutboxRelay.java</span></div><h1>ShipperIdentityOutboxRelay.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.infrastructure.adapter;
+
+import com.delivery.shipper.application.api.ShipperPorts;
+import com.delivery.shipper.infrastructure.entity.ShipperIdentityOutboxEvent;
+import com.delivery.shipper.infrastructure.repository.ShipperIdentityOutboxEventRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Gated, synchronous Kafka relay for the shipper identity outbox. */
+@Component
+public class ShipperIdentityOutboxRelay implements ShipperPorts.IdentityOutboxRelay {
+    private final ShipperIdentityOutboxEventRepository events; private final KafkaTemplate&lt;String, String&gt; kafka;
+    private final ShipperIdentityOutboxService outbox; private final boolean enabled;
+    private final Counter published; private final Counter failed;
+
+    public ShipperIdentityOutboxRelay(ShipperIdentityOutboxEventRepository events, KafkaTemplate&lt;String, String&gt; kafka,
+            ShipperIdentityOutboxService outbox,
+<span class="nc" id="L28">            @Value(&quot;${app.shipper.identity-outbox.relay-enabled:false}&quot;) boolean enabled, MeterRegistry metrics) {</span>
+<span class="nc" id="L29">        this.events = events; this.kafka = kafka; this.outbox = outbox; this.enabled = enabled;</span>
+<span class="nc" id="L30">        published = Counter.builder(&quot;delivery.identity.outbox.relay&quot;).tag(&quot;owner&quot;, &quot;shipper&quot;).tag(&quot;outcome&quot;, &quot;published&quot;).register(metrics);</span>
+<span class="nc" id="L31">        failed = Counter.builder(&quot;delivery.identity.outbox.relay&quot;).tag(&quot;owner&quot;, &quot;shipper&quot;).tag(&quot;outcome&quot;, &quot;failed&quot;).register(metrics);</span>
+<span class="nc" id="L32">        Gauge.builder(&quot;delivery.identity.outbox.pending&quot;, events, ShipperIdentityOutboxEventRepository::pendingCount).tag(&quot;owner&quot;, &quot;shipper&quot;).register(metrics);</span>
+<span class="nc" id="L33">        Gauge.builder(&quot;delivery.identity.outbox.oldest.age&quot;, events, e -&gt; oldestAgeSeconds(e.oldestPendingCreatedAt())).tag(&quot;owner&quot;, &quot;shipper&quot;).register(metrics);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Scheduled(fixedDelayString = &quot;${app.shipper.identity-outbox.poll-delay-ms:1000}&quot;)
+    @Transactional
+<span class="nc" id="L38">    void relay() { relayBatch(50); }</span>
+
+    @Override
+    @Transactional
+    public int relayBatch(int maxItems) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (!enabled) return 0;</span>
+<span class="nc" id="L44">        outbox.seedExisting(maxItems);</span>
+<span class="nc" id="L45">        List&lt;ShipperIdentityOutboxEvent&gt; ready = events.findReady(LocalDateTime.now(), PageRequest.of(0, maxItems));</span>
+<span class="nc" id="L46">        int processed = 0;</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        for (ShipperIdentityOutboxEvent event : ready) try {</span>
+<span class="nc" id="L48">            kafka.send(event.getTopic(), event.getEventKey(), event.getPayload()).get();</span>
+<span class="nc" id="L49">            event.setPublishedAt(LocalDateTime.now()); published.increment(); processed++;</span>
+<span class="nc" id="L50">        } catch (Exception failure) {</span>
+<span class="nc" id="L51">            event.setAttempts(event.getAttempts() + 1);</span>
+<span class="nc" id="L52">            event.setAvailableAt(LocalDateTime.now().plusSeconds(Math.min(60, 1L &lt;&lt; Math.min(6, event.getAttempts())))); failed.increment();</span>
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">        return processed;</span>
+    }
+
+    private static double oldestAgeSeconds(LocalDateTime createdAt) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        return createdAt == null ? 0D : Math.max(0D, Duration.between(createdAt, LocalDateTime.now()).toMillis() / 1000D);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

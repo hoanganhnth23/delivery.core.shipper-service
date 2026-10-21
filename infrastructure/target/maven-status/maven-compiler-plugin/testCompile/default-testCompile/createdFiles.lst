@@ -1,0 +1,9 @@
+com/delivery/shipper_service/migration/ShipperFlywayMigrationTest.class
+com/delivery/shipper/infrastructure/TrackingAvailabilityClientTest.class
+com/delivery/shipper_service/dto/ShipperRatingRequestValidationTest.class
+com/delivery/shipper_service/controller/ShipperRatingControllerAuthorizationTest.class
+com/delivery/shipper_service/InfrastructureMvcTestApplication.class
+com/delivery/shipper/infrastructure/TrackingAvailabilityClientTest$1.class
+com/delivery/shipper_service/payload/PageResponseTest.class
+com/delivery/shipper_service/controller/ShipperControllerTest.class
+com/delivery/shipper/infrastructure/IdentityStatusEventListenerTest.class

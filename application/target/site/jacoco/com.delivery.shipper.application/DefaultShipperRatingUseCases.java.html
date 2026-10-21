@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultShipperRatingUseCases.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-application</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.application</a> &gt; <span class="el_source">DefaultShipperRatingUseCases.java</span></div><h1>DefaultShipperRatingUseCases.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.application;
+
+import com.delivery.shipper.application.api.ShipperCommands;
+import com.delivery.shipper.application.api.ShipperPorts;
+import com.delivery.shipper.application.api.ShipperResults;
+import com.delivery.shipper.application.api.ShipperUseCases;
+import com.delivery.shipper.domain.identity.ShipperRole;
+import com.delivery.shipper.domain.read.PageRequest;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
+import java.util.Objects;
+
+/** Framework-free rating commands and the documented bounded self-read. */
+public final class DefaultShipperRatingUseCases implements ShipperUseCases.RateSelf, ShipperUseCases.ReadSelfRatings {
+    private final ShipperPorts.ProfileStore profiles;
+    private final ShipperPorts.RatingStore ratings;
+
+<span class="fc" id="L19">    public DefaultShipperRatingUseCases(ShipperPorts.ProfileStore profiles, ShipperPorts.RatingStore ratings) {</span>
+<span class="fc" id="L20">        this.profiles = Objects.requireNonNull(profiles, &quot;profiles&quot;);</span>
+<span class="fc" id="L21">        this.ratings = Objects.requireNonNull(ratings, &quot;ratings&quot;);</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override public ShipperResults.RatingResult execute(ShipperCommands.SelfRating c) {
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        requireActor(c == null ? null : c.actor());</span>
+<span class="fc bfc" id="L26" title="All 4 branches covered.">        if (c.shipperId() &lt;= 0 || c.orderId() &lt;= 0) throw new IllegalArgumentException(&quot;rating identities must be positive&quot;);</span>
+<span class="fc" id="L27">        var profile = profiles.findById(c.shipperId())</span>
+<span class="fc" id="L28">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;));</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (!profile.identity().owns(c.actor().principalId(), c.actor().legacyUserId()))</span>
+<span class="fc" id="L30">            throw new IllegalArgumentException(&quot;shipper profile is not owned by actor&quot;);</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (ratings.existsByOrderId(c.orderId())) throw new IllegalArgumentException(&quot;order has already been rated&quot;);</span>
+<span class="fc bfc" id="L32" title="All 4 branches covered.">        if (c.score() &lt; 1 || c.score() &gt; 5) throw new IllegalArgumentException(&quot;rating must be between 1 and 5&quot;);</span>
+<span class="fc bfc" id="L33" title="All 4 branches covered.">        if (c.comment() != null &amp;&amp; c.comment().length() &gt; 2000)</span>
+<span class="fc" id="L34">            throw new IllegalArgumentException(&quot;comment exceeds 2000 characters&quot;);</span>
+<span class="fc" id="L35">        ShipperResults.RatingResult result = ratings.add(c);</span>
+<span class="fc" id="L36">        return new ShipperResults.RatingResult(result.shipperId(),</span>
+<span class="fc" id="L37">                BigDecimal.valueOf(result.average()).setScale(1, RoundingMode.HALF_UP).doubleValue(), result.count());</span>
+    }
+
+    @Override public List&lt;ShipperResults.RatingItem&gt; execute(ShipperCommands.Actor actor) {
+<span class="fc" id="L41">        requireActor(actor);</span>
+<span class="fc" id="L42">        long shipperId = profiles.findByPrincipalId(actor.principalId())</span>
+<span class="fc" id="L43">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;)).id();</span>
+<span class="fc" id="L44">        return ratings.findByShipperId(shipperId, new PageRequest(0, PageRequest.MAX_SIZE, null, null));</span>
+    }
+
+    private static void requireActor(ShipperCommands.Actor actor) {
+<span class="pc bpc" id="L48" title="1 of 6 branches missed.">        if (actor == null || actor.principalId() &lt;= 0 || actor.role() != ShipperRole.SHIPPER)</span>
+<span class="fc" id="L49">            throw new IllegalArgumentException(&quot;actor is not authorized&quot;);</span>
+<span class="fc" id="L50">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

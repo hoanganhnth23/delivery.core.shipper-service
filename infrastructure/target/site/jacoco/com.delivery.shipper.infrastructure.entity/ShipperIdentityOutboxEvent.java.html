@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperIdentityOutboxEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.infrastructure.entity</a> &gt; <span class="el_source">ShipperIdentityOutboxEvent.java</span></div><h1>ShipperIdentityOutboxEvent.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.infrastructure.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
+
+/** Transactional source for the shipper identity projection. */
+@Entity
+@Getter
+@Setter
+@Table(name = &quot;shipper_identity_outbox_events&quot;, uniqueConstraints = @UniqueConstraint(
+        name = &quot;uk_shipper_identity_outbox_type_aggregate&quot;, columnNames = {&quot;event_type&quot;, &quot;aggregate_id&quot;}))
+<span class="nc" id="L21">public class ShipperIdentityOutboxEvent {</span>
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @Column(name = &quot;event_id&quot;, nullable = false, unique = true) private UUID eventId;
+    @Column(name = &quot;event_type&quot;, nullable = false) private String eventType;
+    @Column(name = &quot;aggregate_id&quot;, nullable = false) private Long aggregateId;
+    @Column(nullable = false) private String topic;
+    @Column(name = &quot;event_key&quot;, nullable = false) private String eventKey;
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;) private String payload;
+    @Column(nullable = false) private int attempts;
+    @Column(name = &quot;available_at&quot;, nullable = false) private LocalDateTime availableAt;
+    @Column(name = &quot;published_at&quot;) private LocalDateTime publishedAt;
+    @Column(name = &quot;created_at&quot;, nullable = false) private LocalDateTime createdAt;
+    @Column(name = &quot;updated_at&quot;, nullable = false) private LocalDateTime updatedAt;
+
+    @jakarta.persistence.PrePersist void onCreate() {
+<span class="nc" id="L36">        LocalDateTime now = LocalDateTime.now();</span>
+<span class="nc" id="L37">        createdAt = now; updatedAt = now;</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (availableAt == null) availableAt = now;</span>
+<span class="nc" id="L39">    }</span>
+<span class="nc" id="L40">    @jakarta.persistence.PreUpdate void onUpdate() { updatedAt = LocalDateTime.now(); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

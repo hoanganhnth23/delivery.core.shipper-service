@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper_service.controller</a> &gt; <span class="el_source">ShipperController.java</span></div><h1>ShipperController.java</h1><pre class="source lang-java linenums">package com.delivery.shipper_service.controller;
+
+import com.delivery.shipper_service.common.constants.ApiPathConstants;
+import com.delivery.shipper_service.common.constants.RoleConstants;
+import com.delivery.shipper_service.dto.request.CreateShipperRequest;
+import com.delivery.shipper_service.dto.request.UpdateShipperRequest;
+import com.delivery.shipper_service.dto.response.ShipperResponse;
+import com.delivery.shipper_service.mapper.ShipperMapper;
+import com.delivery.shipper_service.payload.BaseResponse;
+import com.delivery.shipper_service.payload.PageResponse;
+import com.delivery.shipper.application.api.ShipperUseCases;
+import com.delivery.shipper.application.api.ShipperCommands;
+import com.delivery.shipper.domain.identity.ShipperRole;
+import com.delivery.shipper.domain.read.PageRequest;
+import com.delivery.auth.resourceserver.security.AuthenticatedActor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.AccessDeniedException;
+import jakarta.validation.Valid;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(ApiPathConstants.SHIPPERS)
+public class ShipperController {
+
+    private final ShipperUseCases.CreateProfile createProfile;
+    private final ShipperUseCases.UpdateProfile updateProfile;
+    private final ShipperUseCases.ReadSelf readSelf;
+    private final ShipperUseCases.ReadById readById;
+    private final ShipperUseCases.ReadPage readPage;
+    private final ShipperUseCases.SetOnlineStatus setOnlineStatus;
+    private final ShipperMapper shipperMapper;
+
+    public ShipperController(ShipperUseCases.CreateProfile createProfile,
+                             ShipperUseCases.UpdateProfile updateProfile,
+                             ShipperUseCases.ReadSelf readSelf,
+                             ShipperUseCases.ReadById readById,
+                             ShipperUseCases.ReadPage readPage,
+                             ShipperUseCases.SetOnlineStatus setOnlineStatus,
+<span class="fc" id="L46">                             ShipperMapper shipperMapper) {</span>
+<span class="fc" id="L47">        this.createProfile = createProfile;</span>
+<span class="fc" id="L48">        this.updateProfile = updateProfile;</span>
+<span class="fc" id="L49">        this.readSelf = readSelf;</span>
+<span class="fc" id="L50">        this.readById = readById;</span>
+<span class="fc" id="L51">        this.readPage = readPage;</span>
+<span class="fc" id="L52">        this.setOnlineStatus = setOnlineStatus;</span>
+<span class="fc" id="L53">        this.shipperMapper = shipperMapper;</span>
+<span class="fc" id="L54">    }</span>
+
+    private ShipperCommands.Actor toActor(AuthenticatedActor actor) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        ShipperRole role = actor.isAdmin() ? ShipperRole.ADMIN : ShipperRole.SHIPPER;</span>
+<span class="fc" id="L58">        return new ShipperCommands.Actor(actor.getPrincipalId(), actor.getLegacyUserId(), role);</span>
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;BaseResponse&lt;ShipperResponse&gt;&gt; create(
+            @Valid @RequestBody CreateShipperRequest request,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="fc" id="L65">        requireShipper(actor);</span>
+<span class="fc" id="L66">        var command = new ShipperCommands.CreateProfile(</span>
+<span class="fc" id="L67">                toActor(actor),</span>
+<span class="fc" id="L68">                request.getFullName(),</span>
+<span class="fc" id="L69">                request.getVehicleType(),</span>
+<span class="fc" id="L70">                request.getLicenseNumber(),</span>
+<span class="fc" id="L71">                request.getIdCard(),</span>
+<span class="fc" id="L72">                request.getPhone(),</span>
+<span class="fc" id="L73">                request.getLicensePlate(), request.getDriverImage(), request.getIdCardFrontImage(),</span>
+<span class="fc" id="L74">                request.getIdCardBackImage(), request.getLicenseImage()</span>
+        );
+<span class="fc" id="L76">        var result = createProfile.execute(command);</span>
+<span class="fc" id="L77">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, shipperMapper.toResponse(result.profile())));</span>
+    }
+
+    @GetMapping(&quot;/my-profile&quot;)
+    public ResponseEntity&lt;BaseResponse&lt;ShipperResponse&gt;&gt; getMyProfile(
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="nc" id="L83">        requireShipper(actor);</span>
+<span class="nc" id="L84">        var result = readSelf.execute(toActor(actor));</span>
+<span class="nc" id="L85">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, shipperMapper.toResponse(result)));</span>
+    }
+
+    @PutMapping
+    public ResponseEntity&lt;BaseResponse&lt;ShipperResponse&gt;&gt; update(
+            @Valid @RequestBody UpdateShipperRequest request,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="nc" id="L92">        requireShipper(actor);</span>
+<span class="nc" id="L93">        var profile = readSelf.execute(toActor(actor));</span>
+<span class="nc" id="L94">        var command = new ShipperCommands.UpdateProfile(</span>
+<span class="nc" id="L95">                toActor(actor),</span>
+<span class="nc" id="L96">                profile.id(),</span>
+<span class="nc" id="L97">                request.getFullName(),</span>
+<span class="nc" id="L98">                request.getVehicleType(),</span>
+<span class="nc" id="L99">                request.getLicenseNumber(),</span>
+<span class="nc" id="L100">                request.getIdCard(),</span>
+<span class="nc" id="L101">                request.getPhone(),</span>
+<span class="nc" id="L102">                request.getLicensePlate(), request.getDriverImage(), request.getIdCardFrontImage(),</span>
+<span class="nc" id="L103">                request.getIdCardBackImage(), request.getLicenseImage()</span>
+        );
+<span class="nc" id="L105">        var result = updateProfile.execute(command);</span>
+<span class="nc" id="L106">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, shipperMapper.toResponse(result)));</span>
+    }
+
+    @PatchMapping(&quot;/online-status&quot;)
+    public ResponseEntity&lt;BaseResponse&lt;ShipperResponse&gt;&gt; updateOnlineStatus(
+            @RequestParam Boolean isOnline,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="nc" id="L113">        requireShipper(actor);</span>
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        var command = new ShipperCommands.SetOnlineStatus(toActor(actor), isOnline != null &amp;&amp; isOnline);</span>
+<span class="nc" id="L115">        var result = setOnlineStatus.execute(command);</span>
+<span class="nc" id="L116">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, shipperMapper.toResponse(result)));</span>
+    }
+
+    // Admin endpoints
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;BaseResponse&lt;ShipperResponse&gt;&gt; getById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="fc" id="L124">        requireAdmin(actor);</span>
+<span class="fc" id="L125">        var result = readById.execute(toActor(actor), id);</span>
+<span class="fc" id="L126">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, shipperMapper.toResponse(result)));</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;BaseResponse&lt;PageResponse&lt;ShipperResponse&gt;&gt;&gt; getAll(
+            Pageable pageable,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="nc" id="L133">        requireAdmin(actor);</span>
+<span class="nc" id="L134">        var request = new PageRequest(pageable.getPageNumber(), pageable.getPageSize(), null, null);</span>
+<span class="nc" id="L135">        var result = readPage.execute(toActor(actor), request);</span>
+<span class="nc" id="L136">        var mappedList = result.page().items().stream().map(shipperMapper::toResponse).toList();</span>
+<span class="nc" id="L137">        Page&lt;ShipperResponse&gt; page = new PageImpl&lt;&gt;(mappedList, pageable, result.page().totalItems());</span>
+<span class="nc" id="L138">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, PageResponse.from(page)));</span>
+    }
+
+    @GetMapping(&quot;/online&quot;)
+    public ResponseEntity&lt;BaseResponse&lt;List&lt;ShipperResponse&gt;&gt;&gt; getOnlineShippers(
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+<span class="nc" id="L144">        requireAdmin(actor);</span>
+<span class="nc" id="L145">        var request = new PageRequest(0, PageRequest.MAX_SIZE, true, null);</span>
+<span class="nc" id="L146">        var result = readPage.execute(toActor(actor), request);</span>
+<span class="nc" id="L147">        var mappedList = result.page().items().stream().map(shipperMapper::toResponse).toList();</span>
+<span class="nc" id="L148">        return ResponseEntity.ok(new BaseResponse&lt;&gt;(1, mappedList));</span>
+    }
+
+    private void requireShipper(AuthenticatedActor actor) {
+<span class="pc bpc" id="L152" title="2 of 4 branches missed.">        if (actor == null || !actor.isShipper()) {</span>
+<span class="nc" id="L153">            throw new AccessDeniedException(&quot;Không có quyền truy cập&quot;);</span>
+        }
+<span class="fc" id="L155">    }</span>
+
+    private void requireAdmin(AuthenticatedActor actor) {
+<span class="pc bpc" id="L158" title="2 of 4 branches missed.">        if (actor == null || !actor.isAdmin()) {</span>
+<span class="nc" id="L159">            throw new AccessDeniedException(&quot;Không có quyền truy cập&quot;);</span>
+        }
+<span class="fc" id="L161">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

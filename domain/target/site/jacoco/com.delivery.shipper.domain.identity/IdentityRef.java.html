@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdentityRef.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-domain</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.domain.identity</a> &gt; <span class="el_source">IdentityRef.java</span></div><h1>IdentityRef.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.domain.identity;
+
+/** Stable principal is canonical; legacy userId is retained only for compatibility. */
+public record IdentityRef(long principalId, Long legacyUserId) {
+<span class="fc" id="L5">    public IdentityRef {</span>
+<span class="fc" id="L6">        requirePositive(principalId, &quot;principalId&quot;);</span>
+<span class="fc bfc" id="L7" title="All 2 branches covered.">        if (legacyUserId != null) requirePositive(legacyUserId, &quot;legacyUserId&quot;);</span>
+<span class="fc" id="L8">    }</span>
+
+    public boolean owns(long candidatePrincipalId, Long candidateLegacyUserId) {
+<span class="fc bfc" id="L11" title="All 4 branches covered.">        if (candidatePrincipalId &gt; 0 &amp;&amp; candidatePrincipalId == principalId) return true;</span>
+<span class="pc bpc" id="L12" title="1 of 6 branches missed.">        return candidatePrincipalId &lt;= 0 &amp;&amp; legacyUserId != null &amp;&amp; legacyUserId.equals(candidateLegacyUserId);</span>
+    }
+
+    private static void requirePositive(long value, String name) {
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        if (value &lt;= 0) throw new IllegalArgumentException(name + &quot; must be positive&quot;);</span>
+<span class="fc" id="L17">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

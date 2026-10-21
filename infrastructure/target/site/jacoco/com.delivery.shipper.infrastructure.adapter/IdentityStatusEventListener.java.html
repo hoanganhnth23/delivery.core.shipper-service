@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdentityStatusEventListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.infrastructure.adapter</a> &gt; <span class="el_source">IdentityStatusEventListener.java</span></div><h1>IdentityStatusEventListener.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.infrastructure.adapter;
+
+import com.delivery.identity.contracts.IdentityStatusChanged;
+import com.delivery.shipper.infrastructure.entity.IdentityInboxReceipt;
+import com.delivery.shipper.infrastructure.repository.IdentityInboxReceiptRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Kafka adapter for the authoritative Auth identity status projection. */
+@Component
+@ConditionalOnProperty(name = &quot;app.identity.events.enabled&quot;, havingValue = &quot;true&quot;)
+public class IdentityStatusEventListener {
+    private final ObjectMapper mapper;
+    private final com.delivery.shipper.application.api.ShipperUseCases.ProjectIdentityStatus projectIdentityStatus;
+    private final IdentityInboxReceiptRepository receipts;
+
+    public IdentityStatusEventListener(ObjectMapper mapper,
+            com.delivery.shipper.application.api.ShipperUseCases.ProjectIdentityStatus projectIdentityStatus,
+<span class="fc" id="L27">            IdentityInboxReceiptRepository receipts) {</span>
+<span class="fc" id="L28">        this.mapper = mapper; this.projectIdentityStatus = projectIdentityStatus; this.receipts = receipts;</span>
+<span class="fc" id="L29">    }</span>
+
+    @RetryableTopic(attempts = &quot;${app.identity.kafka.retry.attempts:4}&quot;,
+            backoff = @Backoff(delayExpression = &quot;${app.identity.kafka.retry.initial-delay-ms:1000}&quot;,
+                    multiplierExpression = &quot;${app.identity.kafka.retry.multiplier:2.0}&quot;,
+                    maxDelayExpression = &quot;${app.identity.kafka.retry.max-delay-ms:10000}&quot;),
+            exclude = IllegalArgumentException.class,
+            autoCreateTopics = &quot;${app.identity.kafka.retry.auto-create-topics:false}&quot;,
+            retryTopicSuffix = &quot;-retry-shipper-identity&quot;, dltTopicSuffix = &quot;.shipper-identity.DLT&quot;)
+    @KafkaListener(topics = &quot;${app.identity.topics.status-changed:identity.status.changed}&quot;,
+            groupId = &quot;${app.identity.status-consumer-group:shipper-identity-status-v1}&quot;)
+    @Transactional
+    public void statusChanged(String raw) throws Exception {
+<span class="fc" id="L42">        IdentityStatusChanged event = mapper.readValue(raw, IdentityStatusChanged.class);</span>
+<span class="pc bpc" id="L43" title="1 of 4 branches missed.">        if (!IdentityStatusChanged.TYPE.equals(event.eventType()) || event.principalId() == null</span>
+<span class="pc bpc" id="L44" title="1 of 4 branches missed.">                || event.status() == null || event.lifecycleVersion() &lt; 1)</span>
+<span class="fc" id="L45">            throw new IllegalArgumentException(&quot;Invalid identity.status.changed event&quot;);</span>
+<span class="fc" id="L46">        String fingerprint = fingerprint(raw);</span>
+<span class="fc" id="L47">        IdentityInboxReceipt previous = receipts.findById(event.eventId()).orElse(null);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (previous != null) {</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (!previous.getEventType().equals(event.eventType())</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">                    || !previous.getPrincipalId().equals(event.principalId())</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                    || !previous.getPayloadFingerprint().equals(fingerprint))</span>
+<span class="fc" id="L52">                throw new IllegalStateException(&quot;Conflicting identity event reuse&quot;);</span>
+<span class="fc" id="L53">            return;</span>
+        }
+<span class="fc" id="L55">        projectIdentityStatus.execute(new com.delivery.shipper.application.api.ShipperCommands.IdentityStatusProjection(</span>
+<span class="fc" id="L56">                event.principalId(), event.status().name(), event.lifecycleVersion()));</span>
+<span class="fc" id="L57">        IdentityInboxReceipt receipt = new IdentityInboxReceipt();</span>
+<span class="fc" id="L58">        receipt.setEventId(event.eventId()); receipt.setEventType(event.eventType());</span>
+<span class="fc" id="L59">        receipt.setPrincipalId(event.principalId()); receipt.setPayloadFingerprint(fingerprint);</span>
+<span class="fc" id="L60">        receipt.setProcessedAt(LocalDateTime.now()); receipts.save(receipt);</span>
+<span class="fc" id="L61">    }</span>
+
+    private static String fingerprint(String raw) {
+        try {
+<span class="fc" id="L65">            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance(&quot;SHA-256&quot;)</span>
+<span class="fc" id="L66">                    .digest(raw.getBytes(StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L67">        } catch (Exception failure) {</span>
+<span class="nc" id="L68">            throw new IllegalStateException(&quot;SHA-256 unavailable&quot;, failure);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

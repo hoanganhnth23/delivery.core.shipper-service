@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultShipperProfileUseCases.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-application</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.application</a> &gt; <span class="el_source">DefaultShipperProfileUseCases.java</span></div><h1>DefaultShipperProfileUseCases.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.application;
+
+import com.delivery.shipper.application.api.ShipperCommands;
+import com.delivery.shipper.application.api.ShipperPorts;
+import com.delivery.shipper.application.api.ShipperResults;
+import com.delivery.shipper.application.api.ShipperSnapshot;
+import com.delivery.shipper.application.api.ShipperUseCases;
+import com.delivery.shipper.domain.identity.AuthorizationDecision;
+import com.delivery.shipper.domain.identity.ShipperAuthorization;
+import com.delivery.shipper.domain.identity.ShipperRole;
+import com.delivery.shipper.domain.profile.ShipperProfileRules;
+import com.delivery.shipper.domain.read.PageRequest;
+import java.util.Objects;
+
+/** Framework-free profile, availability, admin-read and identity use cases. */
+public final class DefaultShipperProfileUseCases implements
+        ShipperUseCases.CreateProfile, ShipperUseCases.UpdateProfile,
+        ShipperUseCases.ReadSelf, ShipperUseCases.ReadById, ShipperUseCases.ReadPage,
+        ShipperUseCases.SetOnlineStatus, ShipperUseCases.TrackingOffline,
+        ShipperUseCases.ProjectIdentityStatus {
+    private final ShipperPorts.ProfileStore profiles;
+    private final ShipperPorts.TrackingAvailability tracking;
+    private final ShipperPorts.IdentityStatusStore identity;
+
+    public DefaultShipperProfileUseCases(ShipperPorts.ProfileStore profiles,
+            ShipperPorts.TrackingAvailability tracking,
+<span class="fc" id="L27">            ShipperPorts.IdentityStatusStore identity) {</span>
+<span class="fc" id="L28">        this.profiles = Objects.requireNonNull(profiles, &quot;profiles&quot;);</span>
+<span class="fc" id="L29">        this.tracking = Objects.requireNonNull(tracking, &quot;tracking&quot;);</span>
+<span class="fc" id="L30">        this.identity = Objects.requireNonNull(identity, &quot;identity&quot;);</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override public ShipperResults.CreateProfileResult execute(ShipperCommands.CreateProfile c) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        requireActor(c == null ? null : c.actor(), ShipperRole.SHIPPER);</span>
+<span class="fc" id="L35">        requireText(c.fullName(), &quot;fullName&quot;); requireText(c.vehicleType(), &quot;vehicleType&quot;);</span>
+<span class="fc" id="L36">        requireText(c.licenseNumber(), &quot;licenseNumber&quot;); requireText(c.idCard(), &quot;idCard&quot;);</span>
+<span class="fc" id="L37">        ShipperProfileRules.requireUniqueDocuments(</span>
+<span class="fc" id="L38">                profiles.existsByLicenseNumber(c.licenseNumber(), null), profiles.existsByIdCard(c.idCard(), null));</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (profiles.findByPrincipalId(c.actor().principalId()).isPresent())</span>
+<span class="fc" id="L40">            throw new IllegalArgumentException(&quot;principal already owns a shipper profile&quot;);</span>
+<span class="fc" id="L41">        return new ShipperResults.CreateProfileResult(profiles.insert(c));</span>
+    }
+
+    @Override public ShipperSnapshot execute(ShipperCommands.UpdateProfile c) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        requireActor(c == null ? null : c.actor(), ShipperRole.SHIPPER);</span>
+<span class="fc" id="L46">        ShipperSnapshot current = ownedProfile(c.actor(), c.shipperId());</span>
+<span class="fc" id="L47">        ShipperProfileRules.requireUniqueDocuments(</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">                c.licenseNumber() != null &amp;&amp; profiles.existsByLicenseNumber(c.licenseNumber(), c.shipperId()),</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">                c.idCard() != null &amp;&amp; profiles.existsByIdCard(c.idCard(), c.shipperId()));</span>
+<span class="fc" id="L50">        return profiles.update(c);</span>
+    }
+
+    @Override public ShipperSnapshot execute(ShipperCommands.Actor actor) {
+<span class="fc" id="L54">        requireActor(actor, ShipperRole.SHIPPER);</span>
+<span class="fc" id="L55">        return profiles.findByPrincipalId(actor.principalId())</span>
+<span class="fc" id="L56">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;));</span>
+    }
+
+    @Override public ShipperSnapshot execute(ShipperCommands.Actor actor, long shipperId) {
+<span class="fc" id="L60">        requireActor(actor, ShipperRole.ADMIN);</span>
+<span class="fc" id="L61">        return profiles.findById(positive(shipperId, &quot;shipperId&quot;))</span>
+<span class="fc" id="L62">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;));</span>
+    }
+
+    @Override public ShipperResults.SelfPage execute(ShipperCommands.Actor actor, PageRequest request) {
+<span class="fc" id="L66">        requireActor(actor, ShipperRole.ADMIN);</span>
+<span class="fc" id="L67">        return profiles.page(Objects.requireNonNull(request, &quot;request&quot;));</span>
+    }
+
+    @Override public ShipperSnapshot execute(ShipperCommands.SetOnlineStatus c) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        requireActor(c == null ? null : c.actor(), ShipperRole.SHIPPER);</span>
+<span class="fc" id="L72">        ShipperSnapshot current = profiles.findByPrincipalId(c.actor().principalId())</span>
+<span class="fc" id="L73">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;));</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!c.online()) tracking.markOffline(current.id(), System.currentTimeMillis());</span>
+        // Tracking must complete before this profile projection is changed.
+<span class="fc" id="L76">        return profiles.updateOnline(current.id(), c.online());</span>
+    }
+
+    @Override public void execute(ShipperCommands.TrackingOffline c) {
+<span class="fc" id="L80">        Objects.requireNonNull(c, &quot;command&quot;);</span>
+<span class="fc" id="L81">        tracking.markOffline(positive(c.shipperId(), &quot;shipperId&quot;), c.requestedAtEpochMillis());</span>
+<span class="fc" id="L82">    }</span>
+
+    @Override public ShipperResults.IdentityStatusResult execute(ShipperCommands.IdentityStatusProjection c) {
+<span class="fc" id="L85">        Objects.requireNonNull(c, &quot;command&quot;);</span>
+<span class="fc bfc" id="L86" title="All 8 branches covered.">        if (c.principalId() &lt;= 0 || c.version() &lt; 1 || c.status() == null || c.status().isBlank())</span>
+<span class="fc" id="L87">            throw new IllegalArgumentException(&quot;invalid identity status projection&quot;);</span>
+<span class="fc" id="L88">        var profile = profiles.findByPrincipalId(c.principalId());</span>
+<span class="fc" id="L89">        boolean applied = false;</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (profile.isPresent()) {</span>
+<span class="fc" id="L91">            var current = profile.get();</span>
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">            if (current.identityStatusVersion() &gt; 0 &amp;&amp; c.version() &gt; current.identityStatusVersion() + 1)</span>
+<span class="fc" id="L93">                throw new IllegalStateException(&quot;Identity lifecycle version gap&quot;);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (c.version() &gt; current.identityStatusVersion()) {</span>
+<span class="pc bpc" id="L95" title="2 of 4 branches missed.">                if (&quot;BLOCKED&quot;.equals(c.status()) &amp;&amp; current.online()) {</span>
+<span class="fc" id="L96">                    tracking.markOffline(current.id(), System.currentTimeMillis());</span>
+<span class="fc" id="L97">                    profiles.updateOnline(current.id(), false);</span>
+                }
+<span class="fc" id="L99">                applied = identity.apply(c).applied();</span>
+            }
+        }
+<span class="fc" id="L102">        return new ShipperResults.IdentityStatusResult(c.principalId(), c.status(), c.version(), applied);</span>
+    }
+
+    private ShipperSnapshot ownedProfile(ShipperCommands.Actor actor, long id) {
+<span class="fc" id="L106">        ShipperSnapshot profile = profiles.findById(positive(id, &quot;shipperId&quot;))</span>
+<span class="pc" id="L107">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;shipper profile not found&quot;));</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (ShipperAuthorization.readSelf(actor.role(), profile.identity(), actor.principalId(), actor.legacyUserId())</span>
+                != AuthorizationDecision.ALLOW)
+<span class="nc" id="L110">            throw new IllegalArgumentException(&quot;shipper profile is not owned by actor&quot;);</span>
+<span class="fc" id="L111">        return profile;</span>
+    }
+
+    private static void requireActor(ShipperCommands.Actor actor, ShipperRole role) {
+<span class="fc bfc" id="L115" title="All 6 branches covered.">        if (actor == null || actor.principalId() &lt;= 0 || actor.role() != role)</span>
+<span class="fc" id="L116">            throw new IllegalArgumentException(&quot;actor is not authorized&quot;);</span>
+<span class="fc bfc" id="L117" title="All 4 branches covered.">        if (actor.legacyUserId() != null &amp;&amp; actor.legacyUserId() &lt;= 0)</span>
+<span class="fc" id="L118">            throw new IllegalArgumentException(&quot;legacyUserId must be positive&quot;);</span>
+<span class="fc" id="L119">    }</span>
+    private static long positive(long value, String name) {
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (value &lt;= 0) throw new IllegalArgumentException(name + &quot; must be positive&quot;); return value;</span>
+    }
+    private static void requireText(String value, String name) {
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if (value == null || value.isBlank()) throw new IllegalArgumentException(name + &quot; is required&quot;);</span>
+<span class="fc" id="L125">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

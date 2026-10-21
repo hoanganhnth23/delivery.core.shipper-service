@@ -1,0 +1,13 @@
+com/delivery/shipper/domain/profile/OnlineTransition.class
+com/delivery/shipper/domain/profile/ShipperProfile.class
+com/delivery/shipper/domain/identity/ShipperAuthorization.class
+com/delivery/shipper/domain/identity/AuthorizationDecision.class
+com/delivery/shipper/domain/identity/IdentityStatusProjection.class
+com/delivery/shipper/domain/read/PageRequest.class
+com/delivery/shipper/domain/profile/ShipperProfileRules.class
+com/delivery/shipper/domain/read/PageSlice.class
+com/delivery/shipper/domain/identity/ShipperRole.class
+com/delivery/shipper/domain/identity/IdentityRef.class
+com/delivery/shipper/domain/profile/OnlineStatus.class
+com/delivery/shipper/domain/rating/ShipperRating.class
+com/delivery/shipper/domain/outbox/IdentityUpserted.class

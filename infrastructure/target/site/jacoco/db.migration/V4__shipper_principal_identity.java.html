@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>V4__shipper_principal_identity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">db.migration</a> &gt; <span class="el_source">V4__shipper_principal_identity.java</span></div><h1>V4__shipper_principal_identity.java</h1><pre class="source lang-java linenums">package db.migration;
+
+import org.flywaydb.core.api.migration.BaseJavaMigration;
+import org.flywaydb.core.api.migration.Context;
+import java.sql.Connection;
+import java.sql.Statement;
+
+/** Additive principal lookup. user_id remains the User-profile domain reference. */
+<span class="fc" id="L9">public class V4__shipper_principal_identity extends BaseJavaMigration {</span>
+    @Override public void migrate(Context context) throws Exception {
+<span class="fc" id="L11">        Connection connection = context.getConnection();</span>
+<span class="fc" id="L12">        try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L13">            statement.execute(&quot;ALTER TABLE shipper ADD COLUMN IF NOT EXISTS principal_id BIGINT&quot;);</span>
+<span class="fc" id="L14">            statement.execute(&quot;CREATE UNIQUE INDEX IF NOT EXISTS uk_shipper_principal_id ON shipper (principal_id)&quot;);</span>
+<span class="fc" id="L15">            statement.execute(&quot;CREATE INDEX IF NOT EXISTS idx_shipper_user_principal ON shipper (user_id, principal_id)&quot;);</span>
+        }
+<span class="fc" id="L17">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

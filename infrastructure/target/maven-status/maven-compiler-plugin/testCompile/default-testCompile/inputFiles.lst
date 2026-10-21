@@ -1,0 +1,8 @@
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper/infrastructure/IdentityStatusEventListenerTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper/infrastructure/TrackingAvailabilityClientTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/InfrastructureMvcTestApplication.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/controller/ShipperControllerTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/controller/ShipperRatingControllerAuthorizationTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/dto/ShipperRatingRequestValidationTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/migration/ShipperFlywayMigrationTest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/infrastructure/src/test/java/com/delivery/shipper_service/payload/PageResponseTest.java

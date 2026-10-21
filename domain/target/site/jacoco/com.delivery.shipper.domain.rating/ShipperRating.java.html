@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperRating.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-domain</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.domain.rating</a> &gt; <span class="el_source">ShipperRating.java</span></div><h1>ShipperRating.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.domain.rating;
+
+public record ShipperRating(long shipperId, long customerId, long orderId, int score, String comment) {
+<span class="pc" id="L4">    public ShipperRating {</span>
+<span class="fc bfc" id="L5" title="All 6 branches covered.">        if (shipperId &lt;= 0 || customerId &lt;= 0 || orderId &lt;= 0) throw new IllegalArgumentException(&quot;rating identities must be positive&quot;);</span>
+<span class="fc bfc" id="L6" title="All 4 branches covered.">        if (score &lt; 1 || score &gt; 5) throw new IllegalArgumentException(&quot;rating must be between 1 and 5&quot;);</span>
+<span class="pc bpc" id="L7" title="2 of 4 branches missed.">        if (comment != null &amp;&amp; comment.length() &gt; 2000) throw new IllegalArgumentException(&quot;comment exceeds 2000 characters&quot;);</span>
+<span class="nc" id="L8">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

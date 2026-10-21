@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperIdentityOutboxService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.infrastructure.adapter</a> &gt; <span class="el_source">ShipperIdentityOutboxService.java</span></div><h1>ShipperIdentityOutboxService.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.infrastructure.adapter;
+
+import com.delivery.identity.contracts.ShipperIdentityUpserted;
+import com.delivery.shipper.domain.outbox.IdentityUpserted;
+import com.delivery.shipper.infrastructure.entity.Shipper;
+import com.delivery.shipper.infrastructure.repository.ShipperIdentityOutboxEventRepository;
+import com.delivery.shipper.infrastructure.repository.ShipperRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
+
+/** Persistence adapter for the transactional shipper identity outbox. */
+@Component
+public final class ShipperIdentityOutboxService implements com.delivery.shipper.application.api.ShipperPorts.IdentityOutbox {
+    private final ShipperIdentityOutboxEventRepository events;
+    private final ObjectMapper mapper;
+    private final ShipperRepository shippers;
+
+    public ShipperIdentityOutboxService(ShipperIdentityOutboxEventRepository events, ObjectMapper mapper,
+<span class="nc" id="L23">            ShipperRepository shippers) {</span>
+<span class="nc" id="L24">        this.events = events; this.mapper = mapper; this.shippers = shippers;</span>
+<span class="nc" id="L25">    }</span>
+
+    public void seedExisting(int batchSize) {
+<span class="nc" id="L28">        shippers.findIdentityOutboxMissing(PageRequest.of(0, batchSize)).forEach(this::upsert);</span>
+<span class="nc" id="L29">    }</span>
+
+    public void upsert(Shipper shipper) {
+<span class="nc bnc" id="L32" title="All 6 branches missed.">        if (shipper.getId() == null || shipper.getPrincipalId() == null || shipper.getUserId() == null</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">                || events.existsByEventTypeAndAggregateId(ShipperIdentityUpserted.TYPE, shipper.getId())) return;</span>
+<span class="nc" id="L34">        UUID eventId = UUID.randomUUID();</span>
+<span class="nc" id="L35">        ShipperIdentityUpserted payload = new ShipperIdentityUpserted(eventId, ShipperIdentityUpserted.TYPE, 1,</span>
+<span class="nc" id="L36">                Instant.now(), eventId, null, shipper.getPrincipalId(), shipper.getUserId(), shipper.getId(), 1L);</span>
+<span class="nc" id="L37">        events.insertIfAbsent(eventId, ShipperIdentityUpserted.TYPE, shipper.getId(),</span>
+<span class="nc" id="L38">                ShipperIdentityUpserted.TYPE, shipper.getPrincipalId().toString(), json(payload));</span>
+<span class="nc" id="L39">    }</span>
+
+    @Override
+    public boolean enqueueIfNew(IdentityUpserted event) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (event == null) return false;</span>
+<span class="nc" id="L44">        String payload = json(new ShipperIdentityUpserted(event.eventId(), ShipperIdentityUpserted.TYPE, 1,</span>
+<span class="nc" id="L45">                event.occurredAt(), event.eventId(), null, event.principalId(), event.legacyUserId(),</span>
+<span class="nc" id="L46">                event.shipperId(), event.mappingVersion()));</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        return events.insertIfAbsent(event.eventId(), ShipperIdentityUpserted.TYPE, event.shipperId(),</span>
+<span class="nc" id="L48">                ShipperIdentityUpserted.TYPE, Long.toString(event.principalId()), payload) &gt; 0;</span>
+    }
+
+    private String json(Object value) {
+<span class="nc" id="L52">        try { return mapper.writeValueAsString(value); }</span>
+<span class="nc" id="L53">        catch (JsonProcessingException failure) { throw new IllegalStateException(&quot;Cannot serialize shipper identity event&quot;, failure); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

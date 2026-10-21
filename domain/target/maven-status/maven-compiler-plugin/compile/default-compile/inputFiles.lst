@@ -1,0 +1,13 @@
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/identity/AuthorizationDecision.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/identity/IdentityRef.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/identity/IdentityStatusProjection.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/identity/ShipperAuthorization.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/identity/ShipperRole.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/outbox/IdentityUpserted.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/profile/OnlineStatus.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/profile/OnlineTransition.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/profile/ShipperProfile.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/profile/ShipperProfileRules.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/rating/ShipperRating.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/read/PageRequest.java
+/Users/a/Documents/private/delivery/backend_delivery/shipper/domain/src/main/java/com/delivery/shipper/domain/read/PageSlice.java

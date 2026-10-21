@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ShipperProfile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">shipper-domain</a> &gt; <a href="index.source.html" class="el_package">com.delivery.shipper.domain.profile</a> &gt; <span class="el_source">ShipperProfile.java</span></div><h1>ShipperProfile.java</h1><pre class="source lang-java linenums">package com.delivery.shipper.domain.profile;
+
+import com.delivery.shipper.domain.identity.IdentityRef;
+import java.util.Objects;
+
+/** Immutable aggregate snapshot; adapters decide how it is persisted. */
+public record ShipperProfile(
+        long id, IdentityRef identity, String fullName, String vehicleType,
+        String licenseNumber, String idCard, String phone, String licensePlate,
+        boolean online, int completedDeliveries, long version) {
+<span class="fc" id="L11">    public ShipperProfile {</span>
+<span class="fc bfc" id="L12" title="All 2 branches covered.">        if (id &lt;= 0) throw new IllegalArgumentException(&quot;shipper id must be positive&quot;);</span>
+<span class="fc" id="L13">        Objects.requireNonNull(identity, &quot;identity&quot;);</span>
+<span class="fc" id="L14">        requireText(fullName, &quot;fullName&quot;, 100);</span>
+<span class="fc" id="L15">        requireText(vehicleType, &quot;vehicleType&quot;, 50);</span>
+<span class="fc" id="L16">        requireText(licenseNumber, &quot;licenseNumber&quot;, 50);</span>
+<span class="fc" id="L17">        requireText(idCard, &quot;idCard&quot;, 20);</span>
+<span class="pc bpc" id="L18" title="1 of 4 branches missed.">        if (phone != null &amp;&amp; phone.length() &gt; 15) throw new IllegalArgumentException(&quot;phone exceeds 15 characters&quot;);</span>
+<span class="pc bpc" id="L19" title="1 of 4 branches missed.">        if (licensePlate != null &amp;&amp; licensePlate.length() &gt; 20) throw new IllegalArgumentException(&quot;licensePlate exceeds 20 characters&quot;);</span>
+<span class="pc bpc" id="L20" title="1 of 4 branches missed.">        if (completedDeliveries &lt; 0 || version &lt; 0) throw new IllegalArgumentException(&quot;counts and version cannot be negative&quot;);</span>
+<span class="fc" id="L21">    }</span>
+
+    public ShipperProfile withOnline(boolean requested) {
+<span class="fc" id="L24">        return new ShipperProfile(id, identity, fullName, vehicleType, licenseNumber, idCard, phone, licensePlate,</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">                requested, completedDeliveries, version + (requested == online ? 0 : 1));</span>
+    }
+
+    private static void requireText(String value, String name, int max) {
+<span class="pc bpc" id="L29" title="2 of 6 branches missed.">        if (value == null || value.isBlank() || value.length() &gt; max) throw new IllegalArgumentException(name + &quot; is required and bounded&quot;);</span>
+<span class="fc" id="L30">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
